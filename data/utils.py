@@ -1,4 +1,6 @@
+import matplotlib.axes
 import matplotlib.patches as patches
+import matplotlib
 import torch
 from matplotlib import pyplot as plt
 
@@ -14,7 +16,9 @@ def get_yolo_bounding_box_corner_coordinates(
     return bb_corner_x.item(), bb_corner_y.item(), bb_width.item(), bb_height.item()
 
 
-def plot_yolo_sample(yolo_sample: YoloSample, hide_axis: bool = False) -> None:
+def plot_yolo_sample(
+    yolo_sample: YoloSample, hide_axis: bool = False, show_grid=False,
+) -> None:
     fig, ax = plt.subplots()
     ax.imshow(yolo_sample.image.permute(1, 2, 0))
 
@@ -26,7 +30,40 @@ def plot_yolo_sample(yolo_sample: YoloSample, hide_axis: bool = False) -> None:
             xy=(x, y), width=w, height=h, linewidth=2, edgecolor="red", facecolor="none"
         )
         ax.add_patch(rect)
-
+    if show_grid:
+        draw_grid(
+            ax=ax, yolo_sample=yolo_sample, nbr_horizontal_cells=7, nbr_vertical_cells=7
+        )
     if hide_axis:
         ax.axis("off")
     plt.show()
+
+def draw_grid(
+    ax: matplotlib.axes,
+    yolo_sample: YoloSample,
+    nbr_horizontal_cells: int,
+    nbr_vertical_cells: int,
+) -> None:
+    image_height = yolo_sample.image.shape[1]
+    image_width = yolo_sample.image.shape[2]
+    print(image_height, image_width)
+    grid_cell_height = int(image_height / nbr_vertical_cells)
+    grid_cell_width = int(image_width / nbr_horizontal_cells)
+    print(grid_cell_height, grid_cell_width)
+
+    # drawing horizontal lines
+    vertical_position = 0
+    for horizontal_line in range(1, nbr_vertical_cells):
+        vertical_position += grid_cell_height
+        print(vertical_position)
+        # draw horizontal line at that height
+        ax.axhline(y=vertical_position, color="green", linewidth=3, linestyle='-')
+
+    horizontal_position = 0
+    # drawing vertical lines
+    for vertical_line in range(1, nbr_horizontal_cells):
+        horizontal_position += grid_cell_width
+        # draw vertical line at that horizontal position
+        ax.axvline(x=horizontal_position, color="green", linewidth=3, linestyle='-')
+    plt.show()
+    
