@@ -33,7 +33,7 @@ def load_labels(
     for label_string in labels_list:
         class_label, *bounding_box = label_string.split(" ")
         bounding_box = [float(x) for x in bounding_box]
-        class_labels_arr.append(class_label)
+        class_labels_arr.append(int(class_label))
         bounding_boxes_arr.append(bounding_box)
     return class_labels_arr, bounding_boxes_arr
 
@@ -53,7 +53,7 @@ def load_yolo_sample(sample_idx: int, df_mapping: pd.DataFrame) -> YoloSample:
     height, width = image_tensor.shape[-2], image_tensor.shape[-1]
 
     bounding_boxes_abs = []
-    for bb in bounding_boxes_arr:  # each bb is [cx_norm, cy_norm, w_norm, h_norm]
+    for bb in bounding_boxes_arr:  # each bb is [cx, cy, w, h]
         cx = bb[0] * width
         cy = bb[1] * height
         w = bb[2] * width

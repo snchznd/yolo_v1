@@ -17,7 +17,7 @@ def get_yolo_bounding_box_corner_coordinates(
 
 
 def plot_yolo_sample(
-    yolo_sample: YoloSample, hide_axis: bool = False, show_grid=False,
+    yolo_sample: YoloSample, hide_axis: bool = False, show_grid=False, show_center : bool = True
 ) -> None:
     fig, ax = plt.subplots()
     ax.imshow(yolo_sample.image.permute(1, 2, 0))
@@ -30,6 +30,8 @@ def plot_yolo_sample(
             xy=(x, y), width=w, height=h, linewidth=2, edgecolor="red", facecolor="none"
         )
         ax.add_patch(rect)
+        if show_center:
+            ax.scatter(bb_tensor[0], bb_tensor[1], color='magenta', s=50)
     if show_grid:
         draw_grid(
             ax=ax, yolo_sample=yolo_sample, nbr_horizontal_cells=7, nbr_vertical_cells=7
@@ -46,24 +48,21 @@ def draw_grid(
 ) -> None:
     image_height = yolo_sample.image.shape[1]
     image_width = yolo_sample.image.shape[2]
-    print(image_height, image_width)
     grid_cell_height = int(image_height / nbr_vertical_cells)
     grid_cell_width = int(image_width / nbr_horizontal_cells)
-    print(grid_cell_height, grid_cell_width)
 
     # drawing horizontal lines
     vertical_position = 0
     for horizontal_line in range(1, nbr_vertical_cells):
         vertical_position += grid_cell_height
-        print(vertical_position)
         # draw horizontal line at that height
-        ax.axhline(y=vertical_position, color="green", linewidth=3, linestyle='-')
+        ax.axhline(y=vertical_position, color="lime", linewidth=2, linestyle='-')
 
     horizontal_position = 0
     # drawing vertical lines
     for vertical_line in range(1, nbr_horizontal_cells):
         horizontal_position += grid_cell_width
         # draw vertical line at that horizontal position
-        ax.axvline(x=horizontal_position, color="green", linewidth=3, linestyle='-')
+        ax.axvline(x=horizontal_position, color="lime", linewidth=2, linestyle='-')
     plt.show()
     
