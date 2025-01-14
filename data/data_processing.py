@@ -10,7 +10,9 @@ from .yolo_sample import YoloSample
 def transform_yolo_sample(
     yolo_sample: YoloSample, transforms_list: List[torch.nn.Module]
 ) -> YoloSample:  # inplace
-    transforms_composition = torchvision.transforms.v2.Compose(transforms_list)
+    transforms_composition = transforms_list
+    if not isinstance(transforms_list, torchvision.transforms.v2._container.RandomApply):
+        transforms_composition = torchvision.transforms.v2.Compose(transforms_list)
     yolo_sample.image, yolo_sample.bounding_boxes = transforms_composition(
         yolo_sample.image, yolo_sample.bounding_boxes
     )
@@ -30,6 +32,15 @@ def get_grid_cell(
     grid_cell_width = int(image_width / S_width)
     bounding_box_grid_x = bounding_box_center_x // grid_cell_width
     bounding_box_grid_y = bounding_box_center_y // grid_cell_height
+    
+    # We need the operations bellow in case we want to use rotations for data
+    # augmentation as they may put the center of the bb of an object at the 
+    # edge of the grid which would put it in grid cell S. This is a problem
+    # because we only have grid cells 0, 1, ..., S-1 so it would cause an
+    # IndexError
+    bounding_box_grid_x = min(bounding_box_grid_x, S_width-1)
+    bounding_box_grid_y = min(bounding_box_grid_y, S_height-1)
+    
     return int(bounding_box_grid_y), int(bounding_box_grid_x)
 
 def get_normalized_center_coordinates(
@@ -72,7 +83,7 @@ def create_target_tensor(
             S_height=S_height,
             S_width=S_width
         )
-        
+        #print(grid_y, grid_x)
         target_tensor[grid_y,grid_x,0] = normalized_x
         target_tensor[grid_y,grid_x,1] = normalized_y
         
@@ -83,12 +94,12 @@ def create_target_tensor(
         target_tensor[grid_y,grid_x,3] = normalized_h
         
         # 4. create one-hot vector of dim C = 20 with the right label
-        print(f'{class_label=}')
+        #print(f'{class_label=}')
         target_tensor[grid_y,grid_x, class_label+5] = 1
         
         # 5. confidence probability score
         target_tensor[grid_y,grid_x,4] = 1
         
-        print(f"{grid_y=} {grid_x=}")
-        print(f"y={normalized_y*100:.2f}% ; x={normalized_x*100:.2f}%\n")
+        #print(f"{grid_y=} {grid_x=}")
+        #print(f"y={normalized_y*100:.2f}% ; x={normalized_x*100:.2f}%\n")
     return target_tensor 
