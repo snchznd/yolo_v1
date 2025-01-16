@@ -1,7 +1,7 @@
 from typing import Tuple
 
 
-def get_rectangle_area(width, height) -> int:
+def get_rectangle_area(width : int, height : int) -> int:
     return width * height
 
 
@@ -53,10 +53,10 @@ def get_intersection_area(
 def get_top_left_bottom_right_coordinates(
     x_center, y_center, width, height
 ) -> Tuple[int, int, int, int]:
-    x_top_left = x_center - width / 2
-    y_top_left = y_center - height / 2
-    x_bottom_right = x_center + width / 2
-    y_bottom_right = x_center + height / 2
+    x_top_left = x_center - width // 2
+    y_top_left = y_center - height // 2
+    x_bottom_right = x_center + width // 2
+    y_bottom_right = y_center + height // 2
     return x_top_left, y_top_left, x_bottom_right, y_bottom_right
 
 
@@ -87,4 +87,5 @@ def IoU(
         *top_left_bottom_right_coordinates_rectangle_2
     )
     area_union = area_rectangle_1 + area_rectangle_2 - area_intersection
-    return area_intersection / area_union
+    # Prevent division by zero in case of degenerate rectangles 
+    return area_intersection / area_union if area_union > 0 else 0.0
