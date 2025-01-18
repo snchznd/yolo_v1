@@ -10,15 +10,12 @@ from .data_loading import TRAIN_SET_MAPPING_PATH, load_yolo_sample
 from .data_processing import create_target_tensor, transform_yolo_sample
 from .yolo_sample import YoloSample
 
-DEFAULT_TRANSFORMS_LIST = torchvision.transforms.v2.RandomApply(
-    [
+DEFAULT_TRANSFORMS_LIST = [
         torchvision.transforms.v2.Resize(size=(448,) * 2),
-        torchvision.transforms.v2.RandomPhotometricDistort(p=0.1),
-        torchvision.transforms.v2.RandomHorizontalFlip(p=1),
+        torchvision.transforms.v2.RandomPhotometricDistort(p=0.25),
+        torchvision.transforms.v2.RandomHorizontalFlip(p=0.25),
         torchvision.transforms.v2.RandomRotation(degrees=(-90, 90)),
-    ],
-    p=0.5,
-)
+    ]
 
 
 class YoloDataset(torch.utils.data.Dataset):
@@ -39,8 +36,6 @@ class YoloDataset(torch.utils.data.Dataset):
     def __getitem__(
         self, idx: int
     ) -> Tuple[torchvision.tv_tensors.Image, torch.tensor]:
-        if idx == 630:
-            return None, None
         yolo_sample = load_yolo_sample(sample_idx=idx, df_mapping=self.df_mapping)
         if self.transforms_list:
             transform_yolo_sample(
