@@ -35,7 +35,7 @@ def un_normalize_bounding_box(
     return scaled_bounding_box
 
 
-def get_responsible_bounding_box(
+def get_idx_responsible_bounding_box(
     prediction: torch.tensor,
     ground_truth: torch.tensor,
     cell_x: int,
@@ -100,13 +100,17 @@ def get_responsible_bb_selector(
     for batch in range(batch_size):
         for cell_x in range(S_w):
             for cell_y in range(S_h):
-                # need some loop on the batch size
-                idx_responsible_bb = get_responsible_bounding_box(
-                    prediction=prediction[batch, cell_y, cell_x, ::],
-                    ground_truth=gt[batch, cell_y, cell_x, ::],
-                    cell_x=cell_x,
-                    cell_y=cell_y,
-                )
-                bb_selector = slice(0, 5, 1) if idx_responsible_bb else slice(5, 10, 1)
-                prediction_selector[batch, cell_y, cell_x, bb_selector] = True
+                # we should only perform this bb selection computation in
+                # case there is an object the cell is responsible for !
+                if gt[batch, cell_y, cell_x, 4] == 1:
+                    idx_responsible_bb = get_idx_responsible_bounding_box(
+                        prediction=prediction[batch, cell_y, cell_x, ::],
+                        ground_truth=gt[batch, cell_y, cell_x, ::],
+                        cell_x=cell_x,
+                        cell_y=cell_y,
+                    )
+                    bb_selector = (
+                        slice(0, 5, 1) if idx_responsible_bb else slice(5, 10, 1)
+                    )
+                    prediction_selector[batch, cell_y, cell_x, bb_selector] = True
     return prediction_selector
