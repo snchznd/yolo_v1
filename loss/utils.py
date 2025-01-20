@@ -216,3 +216,30 @@ def get_confidences_tensors(
     target_iou_tensor = torch.tensor(target_iou_arr)#.reshape(batch_size, -1)
     return prediction_oobj_confidence_selector, prediction_noobj_confidence_selector, target_iou_tensor
 
+
+def get_class_tensors(
+    prediction: torch.tensor, gt: torch.tensor, S_w: int = 7, S_h: int = 7
+) -> Tuple[torch.tensor,torch.tensor]:
+    """
+    selects only distributions corresponding to cells containing objects
+    
+    prediction shape : batch x S x S x 30
+    gt shape :         batch x S x S x 25
+    return shape:      (batch x S x S x 30, batch x S x S x 25)
+    """
+    batch_size = prediction.shape[0]
+    prediction_selector = torch.zeros(
+        (batch_size, S_h, S_w, 2 * 5 + 20), dtype=torch.bool
+    )
+    gt_selector = torch.zeros(
+        (batch_size, S_h, S_w, 5 + 20), dtype=torch.bool
+    )
+    for batch in range(batch_size):
+        for cell_x in range(S_w):
+            for cell_y in range(S_h):
+                # we only train the class distribution if there is an object
+                # in the cell
+                if gt[batch, cell_y, cell_x, 4] == 1:
+                    prediction_selector[batch, cell_y, cell_x, slice(10,30,1)] = True
+                    gt_selector[batch, cell_y, cell_x, slice(5,25,1)] = True
+    return prediction_selector, gt_selector
