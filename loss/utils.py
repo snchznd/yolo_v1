@@ -87,7 +87,7 @@ def get_idx_responsible_bounding_box(
     if iou_bb_1 >= iou_bb_2:
         idx_selected_bb = 0
         selected_bb_iou = iou_bb_1
-    else :
+    else:
         idx_selected_bb = 1
         selected_bb_iou = iou_bb_2
     return idx_selected_bb, selected_bb_iou
@@ -95,7 +95,7 @@ def get_idx_responsible_bounding_box(
 
 def get_gt_and_pred_bb_selectors(
     prediction: torch.tensor, gt: torch.tensor, S_w: int = 7, S_h: int = 7
-) -> Tuple[torch.tensor,torch.tensor]:
+) -> Tuple[torch.tensor, torch.tensor]:
     """
     Returns two boolean tensors. The first one is of the same shape as the
     prediction tensor and, when used to extract values on the predictions,
@@ -103,7 +103,7 @@ def get_gt_and_pred_bb_selectors(
     an object (i.e. there is an object and this bb is responsible for
     predicting it). The second tensor extracts the corresponsing gt bounding
     boxes and confidence values from the gt tensor.
-    
+
     prediction shape : batch x S x S x 30
     gt shape :         batch x S x S x 25
     return shape:      (batch x S x S x 30, batch x S x S x 25)
@@ -112,9 +112,7 @@ def get_gt_and_pred_bb_selectors(
     prediction_selector = torch.zeros(
         (batch_size, S_h, S_w, 2 * 5 + 20), dtype=torch.bool
     )
-    gt_selector = torch.zeros(
-        (batch_size, S_h, S_w, 5 + 20), dtype=torch.bool
-    )
+    gt_selector = torch.zeros((batch_size, S_h, S_w, 5 + 20), dtype=torch.bool)
     for batch in range(batch_size):
         for cell_x in range(S_w):
             for cell_y in range(S_h):
@@ -137,17 +135,21 @@ def get_gt_and_pred_bb_selectors(
                     prediction_selector[batch, cell_y, cell_x, bb_selector] = True
                     # if we extract a bb from the predictions in this cell,
                     # then we must also extract the corresponding gt
-                    gt_selector[batch, cell_y, cell_x, slice(0,5,1)] = True
+                    gt_selector[batch, cell_y, cell_x, slice(0, 5, 1)] = True
     return prediction_selector, gt_selector
 
 
-def get_coord_tensors(predictions : torch.tensor, targets : torch.tensor) -> Tuple[torch.tensor,torch.tensor,torch.tensor,torch.tensor]:
-    prediction_selector, gt_selector = get_gt_and_pred_bb_selectors(prediction=predictions, gt=targets)
-    
+def get_coord_tensors(
+    predictions: torch.tensor, targets: torch.tensor
+) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
+    prediction_selector, gt_selector = get_gt_and_pred_bb_selectors(
+        prediction=predictions, gt=targets
+    )
+
     selected_prediction_bbs = predictions[prediction_selector]
     selected_gt_bbs = targets[gt_selector]
-    #assert selected_prediction_bbs.shape == selected_gt_bbs.shape, 'pred and gt bbs should have same size'
-    
+    # assert selected_prediction_bbs.shape == selected_gt_bbs.shape, 'pred and gt bbs should have same size'
+
     x_y_coord_selector = torch.zeros_like(selected_prediction_bbs, dtype=torch.bool)
     x_y_coord_selector[::5] = True
     x_y_coord_selector[1::5] = True
@@ -155,10 +157,10 @@ def get_coord_tensors(predictions : torch.tensor, targets : torch.tensor) -> Tup
     w_h_coord_selector = torch.zeros_like(selected_prediction_bbs, dtype=torch.bool)
     w_h_coord_selector[2::5] = True
     w_h_coord_selector[3::5] = True
-    
+
     pred_x_y_coord = selected_prediction_bbs[x_y_coord_selector]
     pred_w_h_coord = selected_prediction_bbs[w_h_coord_selector]
-    
+
     gt_x_y_coord = selected_gt_bbs[x_y_coord_selector]
     gt_w_h_coord = selected_gt_bbs[w_h_coord_selector]
     return pred_x_y_coord, pred_w_h_coord, gt_x_y_coord, gt_w_h_coord
@@ -166,12 +168,12 @@ def get_coord_tensors(predictions : torch.tensor, targets : torch.tensor) -> Tup
 
 def get_confidences_tensors(
     prediction: torch.tensor, gt: torch.tensor, S_w: int = 7, S_h: int = 7
-) -> Tuple[torch.tensor,torch.tensor]:
+) -> Tuple[torch.tensor, torch.tensor]:
     """
     prediction shape : batch x S x S x 30
     gt shape :         batch x S x S x 25
     return shape:      (batch x S x S x 30, batch x S x S x 25)
-    
+
     prediction_oobj_confidence_selector: a boolean tensor allowing to select
     the confidence scores corresponding to the responsible boxes (those that
     should thus be trained to match the IoU of the predicted bb and gt bb)
@@ -180,7 +182,7 @@ def get_confidences_tensors(
     that should thus be trained to equal zero).
     target_iou_tensor: a tensor containing the IoUs of the responsible bounding
     boxes with the gt bounding boxes. This is the target tensor the confidences
-    retrieved with the prediction_oobj_confidence_selector boolean selector 
+    retrieved with the prediction_oobj_confidence_selector boolean selector
     will be trained to match.
     """
     batch_size = prediction.shape[0]
@@ -206,23 +208,37 @@ def get_confidences_tensors(
                     target_iou_arr.append(target_iou)
                     idx_oobj_confidence = 9 if idx_responsible_bb else 4
                     idx_noobj_confidence = (idx_oobj_confidence + 5) % 10
-                    prediction_oobj_confidence_selector[batch, cell_y, cell_x, idx_oobj_confidence] = True
-                    prediction_noobj_confidence_selector[batch, cell_y, cell_x, idx_noobj_confidence] = True
+                    prediction_oobj_confidence_selector[
+                        batch, cell_y, cell_x, idx_oobj_confidence
+                    ] = True
+                    prediction_noobj_confidence_selector[
+                        batch, cell_y, cell_x, idx_noobj_confidence
+                    ] = True
                 else:
                     # in case there is no object, no box is reponsible so both
                     # bb confidences go to the noobj tensor
-                    prediction_noobj_confidence_selector[batch, cell_y, cell_x, 4] = True
-                    prediction_noobj_confidence_selector[batch, cell_y, cell_x, 9] = True
-    target_iou_tensor = torch.tensor(target_iou_arr)#.reshape(batch_size, -1)
-    return prediction_oobj_confidence_selector, prediction_noobj_confidence_selector, target_iou_tensor
+                    prediction_noobj_confidence_selector[batch, cell_y, cell_x, 4] = (
+                        True
+                    )
+                    prediction_noobj_confidence_selector[batch, cell_y, cell_x, 9] = (
+                        True
+                    )
+    target_iou_tensor = target_iou_tensor = torch.tensor(
+        target_iou_arr, dtype=prediction.dtype, device=prediction.device
+    )
+    return (
+        prediction_oobj_confidence_selector,
+        prediction_noobj_confidence_selector,
+        target_iou_tensor,
+    )
 
 
 def get_class_tensors(
     prediction: torch.tensor, gt: torch.tensor, S_w: int = 7, S_h: int = 7
-) -> Tuple[torch.tensor,torch.tensor]:
+) -> Tuple[torch.tensor, torch.tensor]:
     """
     selects only distributions corresponding to cells containing objects
-    
+
     prediction shape : batch x S x S x 30
     gt shape :         batch x S x S x 25
     return shape:      (batch x S x S x 30, batch x S x S x 25)
@@ -231,15 +247,13 @@ def get_class_tensors(
     prediction_selector = torch.zeros(
         (batch_size, S_h, S_w, 2 * 5 + 20), dtype=torch.bool
     )
-    gt_selector = torch.zeros(
-        (batch_size, S_h, S_w, 5 + 20), dtype=torch.bool
-    )
+    gt_selector = torch.zeros((batch_size, S_h, S_w, 5 + 20), dtype=torch.bool)
     for batch in range(batch_size):
         for cell_x in range(S_w):
             for cell_y in range(S_h):
                 # we only train the class distribution if there is an object
                 # in the cell
                 if gt[batch, cell_y, cell_x, 4] == 1:
-                    prediction_selector[batch, cell_y, cell_x, slice(10,30,1)] = True
-                    gt_selector[batch, cell_y, cell_x, slice(5,25,1)] = True
+                    prediction_selector[batch, cell_y, cell_x, slice(10, 30, 1)] = True
+                    gt_selector[batch, cell_y, cell_x, slice(5, 25, 1)] = True
     return prediction_selector, gt_selector
