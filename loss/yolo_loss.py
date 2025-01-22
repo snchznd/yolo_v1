@@ -24,8 +24,17 @@ class YoloLoss(torch.nn.Module):
             predictions, targets
         )
         x_y_loss = self.lambda_coord * torch.sum((pred_x_y_coord - gt_x_y_coord) ** 2)
+
+        # We can not simply compute the sqrt of pred_w_h_coord and gt_w_h_coord
+        # because these values can be negative. Thus we need to clamp the 
+        # values to a lower bound above zero before takin the sqrt. Another
+        # (better?) option is to force the network to predict positive values.
         w_h_loss = self.lambda_coord * torch.sum(
-            (torch.sqrt(pred_w_h_coord) - torch.sqrt(gt_w_h_coord)) ** 2
+            (
+                torch.sqrt(torch.clamp(pred_w_h_coord, min=1e-9))
+                - torch.sqrt(torch.clamp(gt_w_h_coord, min=1e-9))
+            )
+            ** 2
         )
         return x_y_loss + w_h_loss
 
@@ -46,7 +55,9 @@ class YoloLoss(torch.nn.Module):
     def compute_class_loss(
         self, predictions: torch.tensor, targets: torch.tensor
     ) -> torch.tensor:
-        prediction_selector, targets_selector = get_class_tensors(prediction=predictions, gt=targets)
+        prediction_selector, targets_selector = get_class_tensors(
+            prediction=predictions, gt=targets
+        )
         predictions_classes = predictions[prediction_selector]
         target_classes = targets[targets_selector]
         return torch.sum((predictions_classes - target_classes) ** 2)
