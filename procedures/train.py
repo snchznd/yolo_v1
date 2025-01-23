@@ -4,8 +4,11 @@ import datetime
 import time
 import os
 from .eval import evaluate_model
+from utils.loggers import get_file_logger
 
 LOGGING_PATH = "/home/masn/projects/yolo/logs"
+EPOCH_LOGGING_PATH = os.path.join(LOGGING_PATH, 'train_epoch')
+BATCH_LOGGING_PATH = os.path.join(LOGGING_PATH, 'train_batch')
 
 
 def train(
@@ -15,10 +18,15 @@ def train(
     loss_func,
     optimizer,
     nbr_epochs,
-    writer,
+    #writer,
     device: str = "cuda",
 ) -> None:
+    batch_logger = get_file_logger(logger_name='train_batch',
+                             log_file=BATCH_LOGGING_PATH,)
+    epoch_logger = get_file_logger(logger_name='train_epoch',
+                             log_file=EPOCH_LOGGING_PATH,)
     for epoch in range(nbr_epochs):
+        epoch_losses = []
         model.train()
         for idx, (images, targets) in tqdm(
             enumerate(train_loader), total=len(train_loader)
@@ -44,30 +52,18 @@ def train(
             optimizer.step()
 
             # logging
-            writer.add_scalar("Loss/train", loss.detach().item(), epoch)
-            now = time.perf_counter()
-            train_logger.info(
-                f"epoch: {epoch:>2} | batch: {idx:>3} | loss: {loss.detach().item() / batch_size :>6.3f}"
+            #writer.add_scalar("Loss/train", loss.detach().item(), epoch)
+            batch_loss = loss.detach().item() / batch_size
+            batch_logger.info(
+                f"epoch: {epoch:>2} | batch: {idx:>3} | loss: {batch_loss:>6.3f}"
             )
+            epoch_losses.append(batch_loss)
 
+        # log epoch loss
+        epoch_logger.info(
+            f"epoch: {epoch:>2} | loss: {sum(epoch_losses) / len(epoch_losses) :>6.3f}"
+        )
+        
         # evaluate model on validation set
-        evaluate_model(model, val_loader, loss_func, device, epoch)
+        #evaluate_model(model, val_loader, loss_func, device, epoch)
 
-
-def create_logger():
-    file_name = (
-        "training_" + datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S") + ".log"
-    )
-    file_path = os.path.join(LOGGING_PATH, file_name)
-    global train_logger
-    train_logger = logging.getLogger(__name__)
-    logging.basicConfig(
-        filename=file_path,
-        encoding="utf-8",
-        level=logging.DEBUG,
-        format="[%(asctime)s] - %(levelname)s - | %(message)s",
-        datefmt="%d-%m-%Y %H:%M:%S",
-    )
-
-
-create_logger()
