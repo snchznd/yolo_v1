@@ -1,6 +1,7 @@
 import logging
 import datetime
 
+LOGGING_PATH = "/home/masn/projects/yolo/logs"
 DEFAULT_FORMAT = "[%(asctime)s] - %(levelname)s - | %(message)s"
 
 
