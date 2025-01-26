@@ -125,7 +125,7 @@ def train(
             writer,
         )
         if perform_validation and epoch_eval_loss < eval_loss:
-            events_logger.info(f'saving new best model with evaluation loss: {epoch_eval_loss:>6.4f}')
+            events_logger.info(f'epoch: {epoch} | saving new best model with evaluation loss: {epoch_eval_loss:>6.4f}')
             eval_loss = epoch_eval_loss
             model_file_path = "best_model_" + datetime.datetime.now().strftime(
                 "%d-%m-%y_%H:%M:%S"
@@ -135,3 +135,8 @@ def train(
 
     if writer:
         writer.flush()
+        
+    # save last model
+    last_model_file_path = "last_model.pth"
+    last_model_save_path = os.path.join(MODEL_SAVE_PATH, last_model_file_path)
+    torch.save(model.state_dict(), last_model_save_path)
