@@ -18,7 +18,8 @@ from .yolo_sample import YoloSample
 
 TRAIN_TRANSFORMS_LIST = [
     torchvision.transforms.v2.Resize(size=(448,) * 2),
-    torchvision.transforms.v2.RandomPhotometricDistort(p=0.25),
+    #torchvision.transforms.v2.RandomPhotometricDistort(p=0.25),
+    torchvision.transforms.v2.RandomAffine(degrees=(0, 0), translate=(0.3, 0.3), scale=(0.6, 1)),
     torchvision.transforms.v2.RandomHorizontalFlip(p=0.25),
     torchvision.transforms.v2.RandomRotation(degrees=(-90, 90)),
 ]
