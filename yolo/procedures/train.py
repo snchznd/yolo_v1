@@ -1,39 +1,13 @@
 import datetime
 import math
 import os
+from typing import Optional
 
 import torch
 from tqdm import tqdm
 
-from utils.loggers import LOGGING_PATH, get_file_logger
-
-from .eval import evaluate_model
-
-TRAIN_EPOCH_DIR = "train_epoch"
-TRAIN_BATCH_DIR = "train_batch"
-EVENTS_DIR = 'events'
-TRAIN_EPOCH_FILE_NAME = "train_epoch"
-TRAIN_BATCH_FILE_NAME = "train_batch"
-TRAIN_EPOCH_LOGGING_PATH = os.path.join(
-    LOGGING_PATH, TRAIN_EPOCH_DIR, TRAIN_EPOCH_FILE_NAME
-)
-TRAIN_BATCH_LOGGING_PATH = os.path.join(
-    LOGGING_PATH, TRAIN_BATCH_DIR, TRAIN_BATCH_FILE_NAME
-)
-EVAL_EPOCH_DIR = "eval_epoch"
-EVAL_BATCH_DIR = "eval_batch"
-EVAL_EPOCH_FILE_NAME = "eval_epoch"
-EVAL_BATCH_FILE_NAME = "eval_batch"
-EVENTS_FILE_NAME = 'events'
-EVAL_EPOCH_LOGGING_PATH = os.path.join(
-    LOGGING_PATH, EVAL_EPOCH_DIR, EVAL_EPOCH_FILE_NAME
-)
-EVAL_BATCH_LOGGING_PATH = os.path.join(
-    LOGGING_PATH, EVAL_BATCH_DIR, EVAL_BATCH_FILE_NAME
-)
-EVENTS_LOGGING_PATH = os.path.join(LOGGING_PATH, EVENTS_DIR, EVENTS_FILE_NAME)
-
-MODEL_SAVE_PATH = os.path.join(LOGGING_PATH, "model")
+from yolo.procedures.eval import evaluate_model
+from yolo.utils.loggers import LOGGING_PATH, get_file_logger
 
 
 def train(
@@ -46,27 +20,41 @@ def train(
     writer: torch.utils.tensorboard.writer.SummaryWriter = None,
     device: str = "cuda",
     perform_validation: bool = True,
+    train_batch_logging_path: Optional[str] = None,
+    train_epoch_logging_path: Optional[str] = None,
+    eval_batch_logging_path: Optional[str] = None,
+    eval_epoch_logging_path: Optional[str] = None,
+    events_logging_path: Optional[str] = None,
+    model_save_path: Optional[str] = None,
 ) -> None:
-    train_batch_logger = get_file_logger(
-        logger_name="train_batch",
-        log_file=TRAIN_BATCH_LOGGING_PATH,
-    )
-    train_epoch_logger = get_file_logger(
-        logger_name="train_epoch",
-        log_file=TRAIN_EPOCH_LOGGING_PATH,
-    )
-    eval_batch_logger = get_file_logger(
-        logger_name="evaluate_batch",
-        log_file=EVAL_BATCH_LOGGING_PATH,
-    )
-    eval_epoch_logger = get_file_logger(
-        logger_name="evaluate_epoch",
-        log_file=EVAL_EPOCH_LOGGING_PATH,
-    )
-    events_logger = get_file_logger(
-        logger_name="event_logger",
-        log_file=EVENTS_LOGGING_PATH,
-    )
+    if train_batch_logging_path:
+        train_batch_logger = get_file_logger(
+            logger_name="train_batch",
+            log_file=train_batch_logging_path,
+        )
+
+    if train_epoch_logging_path:
+        train_epoch_logger = get_file_logger(
+            logger_name="train_epoch",
+            log_file=train_epoch_logging_path,
+        )
+    if eval_batch_logging_path:
+        eval_batch_logger = get_file_logger(
+            logger_name="evaluate_batch",
+            log_file=eval_batch_logging_path,
+        )
+    if eval_epoch_logging_path:
+        eval_epoch_logger = get_file_logger(
+            logger_name="evaluate_epoch",
+            log_file=eval_epoch_logging_path,
+        )
+    if events_logging_path:
+        events_logger = get_file_logger(
+            logger_name="event_logger",
+            log_file=events_logging_path,
+        )
+    if perform_validation and not model_save_path:
+        raise ValueError
     batch_counter = 0
     eval_loss = math.inf
     for epoch in range(nbr_epochs):
@@ -113,30 +101,35 @@ def train(
         if writer:
             writer.add_scalar("train epoch loss", epoch_loss, epoch)
 
-        # evaluate model on validation set
-        epoch_eval_loss = evaluate_model(
-            model,
-            val_loader,
-            loss_func,
-            device,
-            epoch,
-            eval_batch_logger,
-            eval_epoch_logger,
-            writer,
-        )
-        if perform_validation and epoch_eval_loss < eval_loss:
-            events_logger.info(f'epoch: {epoch} | saving new best model with evaluation loss: {epoch_eval_loss:>6.4f}')
-            eval_loss = epoch_eval_loss
-            model_file_path = "best_model_" + datetime.datetime.now().strftime(
-                "%d-%m-%y_%H:%M:%S"
-            ) + '.pth'
-            model_save_path = os.path.join(MODEL_SAVE_PATH, model_file_path)
-            torch.save(model.state_dict(), model_save_path)
+        if perform_validation:
+            # evaluate model on validation set
+            epoch_eval_loss = evaluate_model(
+                model,
+                val_loader,
+                loss_func,
+                device,
+                epoch,
+                eval_batch_logger,
+                eval_epoch_logger,
+                writer,
+            )
+            if epoch_eval_loss < eval_loss:
+                events_logger.info(
+                    f"epoch: {epoch} | saving new best model with evaluation loss: {epoch_eval_loss:>6.4f}"
+                )
+                eval_loss = epoch_eval_loss
+                # model_file_path = "best_model_" + datetime.datetime.now().strftime(
+                #     "%d-%m-%y_%H:%M:%S"
+                # ) + '.pth'
+                model_file_path = "best_model_try"
+                torch.save(
+                    model.state_dict(), os.path.join(model_save_path, model_file_path)
+                )
 
     if writer:
         writer.flush()
-        
+
     # save last model
     last_model_file_path = "last_model.pth"
-    last_model_save_path = os.path.join(MODEL_SAVE_PATH, last_model_file_path)
+    last_model_save_path = os.path.join(model_save_path, last_model_file_path)
     torch.save(model.state_dict(), last_model_save_path)

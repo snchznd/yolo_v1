@@ -6,10 +6,9 @@ from matplotlib import pyplot as plt
 import yaml
 from typing import Dict, Optional
 
-from .yolo_sample import YoloSample
-from loss.utils import un_normalize_bounding_box
-from loss.iou import IoU
-from model.yolo import YoloModel
+from yolo.loss.utils import un_normalize_bounding_box
+from yolo.loss.iou import IoU
+from yolo.model.yolo import YoloModel
 
 BEST_MODEL_PATH = '/home/masn/projects/yolo/logs/model/best_model.pth'
 CLASSES_MAPPING_PATH = '/home/masn/projects/yolo/classes_mapping.yaml'

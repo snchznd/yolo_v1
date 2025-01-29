@@ -1,5 +1,7 @@
 import argparse
-from train import add_train_cmd, launch_train_procedure
+
+from yolo.cli.train import add_train_cmd, launch_train_procedure
+
 
 def parse_args() -> None:
     parser = argparse.ArgumentParser(
@@ -11,14 +13,15 @@ def parse_args() -> None:
     )
 
     add_train_cmd(subparsers)
-    
+
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_args()
-    
+
     match args.command:
-        case 'train':
+        case "train":
             launch_train_procedure(args)
-        case _ :
+        case _:
             raise ValueError
