@@ -1,7 +1,7 @@
 import logging
 import datetime
+import os
 
-LOGGING_PATH = "/home/masn/projects/yolo/logs"
 DEFAULT_FORMAT = "[%(asctime)s] - %(levelname)s - | %(message)s"
 
 
@@ -18,7 +18,9 @@ def get_file_logger(
     logger.setLevel(level)
     
     # add handler
-    handler = logging.FileHandler(process_file_name(log_file))
+    expanded_log_file = os.path.expanduser(log_file)
+    full_path = process_file_name(expanded_log_file)
+    handler = logging.FileHandler(full_path)
     
     logger.addHandler(handler)
     

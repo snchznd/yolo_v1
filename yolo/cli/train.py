@@ -39,10 +39,23 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     generate_train_val_partitions(
+        original_train_set_mapping_path=config["paths"]["original_train_set_mapping_path"],
+        train_set_mapping_path=config["paths"]["train_set_mapping_path"],
+        validation_set_mapping_path=config["paths"]["validation_set_mapping_path"],
         validation_fraction=config["data"]["validation_fraction"]
     )
-    train_dataset = YoloDataset(DatasetSplit.TRAIN)
-    val_dataset = YoloDataset(DatasetSplit.VALIDATION)
+    
+    datasets_kwargs = {
+        "train_set_mapping_path": config["paths"]["train_set_mapping_path"],
+        "validation_set_mapping_path": config["paths"]["validation_set_mapping_path"],
+        "test_set_mapping_path": config["paths"]["test_set_mapping_path"],
+        "images_dir": config["directories"]["images_dir"],
+        "labels_dir": config["directories"]["labels_dir"]
+    }
+    
+    train_dataset = YoloDataset(dataset_split=DatasetSplit.TRAIN,
+                                **datasets_kwargs)
+    val_dataset = YoloDataset(dataset_split=DatasetSplit.VALIDATION, **datasets_kwargs)
 
     train_loader = DataLoader(
         train_dataset,
@@ -54,23 +67,18 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
         batch_size=config["data"]["val_batch_size"],
         num_workers=config["data"]["loaders_num_workers"],
     )
-
-    print(args.load_best_model)
     model = None
     if args.load_best_model:
         model = load_model(
-            weights_path=os.path.join(
-                config["paths"]["model_save_path"], "best_model.pth"
-            ),
+            weights_path=config["paths"]["initial_model_path"],
             device=device,
         )
     else:
-        model = YoloModel()
+        model = YoloModel().to(device)
 
     yolo_loss = YoloLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["lr"])
     writer = SummaryWriter(config["paths"]["tensorboard_log_path"])
-    return None
     train(
         model=model,
         train_loader=train_loader,
@@ -81,10 +89,10 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
         writer=writer,
         device=device,
         perform_validation=config["train"]["perform_validation"],
-        train_batch_logging_path=config["paths"]["train_batch_logging_path"],
-        train_epoch_logging_path=config["paths"]["train_epoch_logging_path"],
-        eval_batch_logging_path=config["paths"]["eval_batch_logging_path"],
-        eval_epoch_logging_path=config["paths"]["eval_epoch_logging_path"],
-        events_logging_path=config["paths"]["events_logging_path"],
-        model_save_path=config["paths"]["model_save_path"],
+        train_batch_logging_path=config["directories"]["train_batch_logging_dir"],
+        train_epoch_logging_path=config["directories"]["train_epoch_logging_dir"],
+        eval_batch_logging_path=config["directories"]["eval_batch_logging_dir"],
+        eval_epoch_logging_path=config["directories"]["eval_epoch_logging_dir"],
+        events_logging_path=config["directories"]["events_logging_dir"],
+        model_save_path=config["directories"]["model_save_dir"],
     )

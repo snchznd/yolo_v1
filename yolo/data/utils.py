@@ -1,17 +1,14 @@
-import matplotlib.axes
 import matplotlib.patches as patches
-import matplotlib
 import torch
 from matplotlib import pyplot as plt
 import yaml
 from typing import Dict, Optional
+import os
 
 from yolo.loss.utils import un_normalize_bounding_box
 from yolo.loss.iou import IoU
 from yolo.model.yolo import YoloModel
 
-BEST_MODEL_PATH = '/home/masn/projects/yolo/logs/model/best_model.pth'
-CLASSES_MAPPING_PATH = '/home/masn/projects/yolo/classes_mapping.yaml'
 
 def get_yolo_bounding_box_corner_coordinates(
     bounding_box: torch.tensor,
@@ -83,14 +80,15 @@ def plot_model_prediction(img : torch.tensor,
         ax.add_patch(rect)
     plt.show()
     
-def load_model(weights_path : str = BEST_MODEL_PATH, device='cuda') -> YoloModel:
+def load_model(weights_path : str, device='cuda') -> YoloModel:
     model = YoloModel()
-    model_weights = torch.load(weights_path)
+    expanded_path = os.path.expanduser(weights_path)
+    model_weights = torch.load(expanded_path, weights_only=True)
     model.load_state_dict(model_weights)
     model.to(device)
     return model
 
-def get_class_mapping(file_path : str = CLASSES_MAPPING_PATH) -> Dict:
+def get_class_mapping(file_path : str) -> Dict:
     with open(file=file_path, encoding='utf-8', mode='r') as f:
         classes_dict = yaml.safe_load(f)
     return classes_dict

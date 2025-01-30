@@ -7,7 +7,7 @@ import torch
 from tqdm import tqdm
 
 from yolo.procedures.eval import evaluate_model
-from yolo.utils.loggers import LOGGING_PATH, get_file_logger
+from yolo.utils.loggers import get_file_logger
 
 
 def train(
@@ -121,10 +121,11 @@ def train(
                 # model_file_path = "best_model_" + datetime.datetime.now().strftime(
                 #     "%d-%m-%y_%H:%M:%S"
                 # ) + '.pth'
-                model_file_path = "best_model_try"
-                torch.save(
-                    model.state_dict(), os.path.join(model_save_path, model_file_path)
-                )
+                
+                # model_file_path = "best_model_try"
+                # torch.save(
+                #     model.state_dict(), os.path.join(model_save_path, model_file_path)
+                # )
 
     if writer:
         writer.flush()
@@ -132,4 +133,4 @@ def train(
     # save last model
     last_model_file_path = "last_model.pth"
     last_model_save_path = os.path.join(model_save_path, last_model_file_path)
-    torch.save(model.state_dict(), last_model_save_path)
+    #torch.save(model.state_dict(), last_model_save_path)
