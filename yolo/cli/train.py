@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import os
 
 import torch
@@ -78,7 +79,18 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
 
     yolo_loss = YoloLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["lr"])
-    writer = SummaryWriter(config["paths"]["tensorboard_log_path"])
+    
+    experiment_name = datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S")
+    
+    # create directory for tensorboard logging
+    tensorboar_logging_dir = os.path.join(os.path.expanduser(config["paths"]["tensorboard_log_path"]), experiment_name)
+    try:
+        os.makedirs(tensorboar_logging_dir)
+    except OSError as e:
+        print(f"Error creating directory: {e}")
+        
+    writer = SummaryWriter(tensorboar_logging_dir)
+    
     train(
         model=model,
         train_loader=train_loader,
@@ -86,6 +98,8 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
         loss_func=yolo_loss,
         optimizer=optimizer,
         nbr_epochs=config["train"]["nbr_epochs"],
+        experiment_name=experiment_name,
+        model_save_dir=config["directories"]["model_save_dir"],
         writer=writer,
         device=device,
         perform_validation=config["train"]["perform_validation"],

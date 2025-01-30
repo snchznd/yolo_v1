@@ -17,6 +17,8 @@ def train(
     loss_func: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     nbr_epochs: int,
+    experiment_name: str,
+    model_save_dir: str,
     writer: torch.utils.tensorboard.writer.SummaryWriter = None,
     device: str = "cuda",
     perform_validation: bool = True,
@@ -55,6 +57,13 @@ def train(
         )
     if perform_validation and not model_save_path:
         raise ValueError
+    model_save_dir = os.path.expanduser(model_save_dir)
+    best_model_save_path = os.path.join(
+        model_save_dir, experiment_name + "_best_model.pth"
+    )
+    last_model_save_path = os.path.join(
+        model_save_dir, experiment_name + "_last_model.pth"
+    )
     batch_counter = 0
     eval_loss = math.inf
     for epoch in range(nbr_epochs):
@@ -84,7 +93,6 @@ def train(
             optimizer.step()
 
             # logging
-            # writer.add_scalar("Loss/train", loss.detach().item(), epoch)
             batch_loss = loss.detach().item() / batch_size
             train_batch_logger.info(
                 f"epoch: {epoch:>2} | batch: {idx:>3} | loss: {batch_loss:>6.4f}"
@@ -118,19 +126,11 @@ def train(
                     f"epoch: {epoch} | saving new best model with evaluation loss: {epoch_eval_loss:>6.4f}"
                 )
                 eval_loss = epoch_eval_loss
-                # model_file_path = "best_model_" + datetime.datetime.now().strftime(
-                #     "%d-%m-%y_%H:%M:%S"
-                # ) + '.pth'
-                
-                # model_file_path = "best_model_try"
-                # torch.save(
-                #     model.state_dict(), os.path.join(model_save_path, model_file_path)
-                # )
+
+                torch.save(model.state_dict(), best_model_save_path)
 
     if writer:
         writer.flush()
 
     # save last model
-    last_model_file_path = "last_model.pth"
-    last_model_save_path = os.path.join(model_save_path, last_model_file_path)
-    #torch.save(model.state_dict(), last_model_save_path)
+    torch.save(model.state_dict(), last_model_save_path)
