@@ -243,18 +243,13 @@ class YoloModel(torch.nn.Module):
     def forward(self, x) -> torch.tensor:
         for block in self.blocks:
             x = block(x)
-            print(x.shape)
 
         x = x.reshape(-1, 50_176)
-        print(x.shape)
 
         x = self.linear_block_1(x)
-        print(x.shape)
 
         x = self.linear_block_2(x)
-        print(x.shape)
 
         y = x.reshape(-1, 7, 7, 30)
-        print(y.shape)
 
         return y
