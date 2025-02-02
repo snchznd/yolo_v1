@@ -78,22 +78,21 @@ def get_top_right_bottom_left_coord(bounding_box: torch.tensor) -> torch.tensor:
     coords.append(bb_center_y + bb_height / 2)
     return coords
 
+def set_confidence_treshold(new_confidence_treshold : int) -> None:
+    global confidence_treshold
+    confidence_treshold = new_confidence_treshold / 100
+    
 
 def launch_webcam_feed_inference(
     model: YoloModel,
     resize_factor: float = 2,
-    confidence_treshold: float = 0.3,
     classes_mapping: Optional[Dict] = None,
 ) -> None:
     model.eval()
     cap = cv.VideoCapture(-1)
-    input_resize_transform = torchvision.transforms.v2.Resize(size=(448,) * 2)
 
     original_frame_width = cap.get(cv.CAP_PROP_FRAME_WIDTH)
     original_frame_height = cap.get(cv.CAP_PROP_FRAME_HEIGHT)
-
-    print(f"{original_frame_width=}")
-    print(f"{original_frame_height=}")
 
     cap.set(cv.CAP_PROP_FRAME_WIDTH, original_frame_width * resize_factor)
     cap.set(cv.CAP_PROP_FRAME_HEIGHT, original_frame_height * resize_factor)
@@ -101,13 +100,21 @@ def launch_webcam_feed_inference(
     frame_width = cap.get(cv.CAP_PROP_FRAME_WIDTH)
     frame_height = cap.get(cv.CAP_PROP_FRAME_HEIGHT)
 
-    print(f"{frame_width=}")
-    print(f"{frame_height=}")
-
+    input_resize_transform = torchvision.transforms.v2.Resize(size=(448,) * 2)
     output_resize_transform = torchvision.transforms.v2.Resize(
         size=(frame_height, frame_width)
     )
+    
+    # create confidence treshold trackbar
+    source_window = 'frame'
+    cv.namedWindow(source_window)
+    max_thresh = 100
+    thresh = 27 # initial threshold
+    cv.createTrackbar('Confidence treshold:', source_window, thresh, max_thresh, set_confidence_treshold)
+    
+    # initialize fps timer
     prev_frame_time = time.perf_counter()
+    
     if not cap.isOpened():
         print("Cannot open camera")
         exit()
@@ -119,7 +126,8 @@ def launch_webcam_feed_inference(
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
             break
-
+        
+        # use model to compute all the bounding boxes to plot
         img = torch.tensor(frame, dtype=torch.float32).permute(2, 0, 1)
         img = input_resize_transform(img).to("cuda")
         pred = model(img)
@@ -128,18 +136,17 @@ def launch_webcam_feed_inference(
             confidence_treshold=confidence_treshold,
             classes_mapping=classes_mapping,
         )
+        
         if bbs_to_plot:
+            # transform predicted bb to match frame dim and right format
             bbs_corners = [get_top_right_bottom_left_coord(bb) for bb in bbs_to_plot]
-            # print(bbs_corners)
             bounding_boxes = torchvision.tv_tensors.BoundingBoxes(
                 data=bbs_corners,
                 format=torchvision.tv_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=(448, 448),  # H, W
             )
-
             resized_bbs = output_resize_transform(bounding_boxes)
 
-            # draw on the frame
             for idx, bb in enumerate(resized_bbs):
                 top_left_x, top_left_y, bottom_right_x, bottom_right_y = bb
                 top_left_x, top_left_y, bottom_right_x, bottom_right_y = (
@@ -148,6 +155,8 @@ def launch_webcam_feed_inference(
                     int(bottom_right_x),
                     int(bottom_right_y),
                 )
+                
+                # draw the bounding box on the frame
                 cv.rectangle(
                     frame,
                     (top_left_x, top_left_y),
@@ -156,6 +165,7 @@ def launch_webcam_feed_inference(
                     6,
                 )
 
+                # write class on top of the bounding box
                 if classes_mapping and predicted_classes and idx < len(predicted_classes):
                     text_to_display = predicted_classes[idx]
                     cv.putText(
@@ -168,16 +178,31 @@ def launch_webcam_feed_inference(
                         3,
                     )
 
+        # compute fps
         current_frame_time = time.perf_counter()
         fps = int(1 / (current_frame_time - prev_frame_time))
         prev_frame_time = current_frame_time
+        
+        # write current fps to the top left of the screen
         cv.putText(
             frame,
             str(fps),
             (7, 70),
             cv.FONT_HERSHEY_SIMPLEX,
-            3,
+            2,
             (255, 0, 0),
+            3,
+            cv.LINE_AA,
+        )
+        
+        # write current confidence reshold to the top right of the screen
+        cv.putText(
+            frame,
+            str(confidence_treshold),
+            (int(frame_width - 150), 70),
+            cv.FONT_HERSHEY_SIMPLEX,
+            2,
+            (255, 0, 255),
             3,
             cv.LINE_AA,
         )
@@ -201,11 +226,10 @@ if __name__ == "__main__":
     class_mapping = get_class_mapping(
         "/home/masn/projects/yolo/data/classes_mapping.yaml"
     )
-    RESIZE_FACTOR = 2
+    RESIZE_FACTOR = 1.5
     CONFIDENCE_TRESHOLD = 0.275
     launch_webcam_feed_inference(
         model=model,
         resize_factor=RESIZE_FACTOR,
-        confidence_treshold=CONFIDENCE_TRESHOLD,
         classes_mapping=class_mapping,
     )
