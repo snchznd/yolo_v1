@@ -9,8 +9,6 @@ import torchvision.tv_tensors
 from yolo.loss.iou import IoU
 from yolo.loss.utils import un_normalize_bounding_box
 from yolo.model.yolo import YoloModel
-from yolo.data.utils import get_class_mapping
-
 
 def get_bbs_to_plot(
     prediction: torch.tensor,
@@ -214,22 +212,3 @@ def launch_webcam_feed_inference(
     # When everything done, release the capture
     cap.release()
     cv.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    import os
-
-    from yolo.data.utils import load_model
-
-    weights_path = os.path.expanduser("~/projects/yolo/logs/model/best_model.pth")
-    model = load_model(weights_path).to("cuda").eval()
-    class_mapping = get_class_mapping(
-        "/home/masn/projects/yolo/data/classes_mapping.yaml"
-    )
-    RESIZE_FACTOR = 1.5
-    CONFIDENCE_TRESHOLD = 0.275
-    launch_webcam_feed_inference(
-        model=model,
-        resize_factor=RESIZE_FACTOR,
-        classes_mapping=class_mapping,
-    )
