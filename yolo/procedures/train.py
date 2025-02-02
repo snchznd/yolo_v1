@@ -19,6 +19,7 @@ def train(
     nbr_epochs: int,
     experiment_name: str,
     model_save_dir: str,
+    statistics_path: str,
     writer: torch.utils.tensorboard.writer.SummaryWriter = None,
     device: str = "cuda",
     perform_validation: bool = True,
@@ -64,6 +65,23 @@ def train(
     last_model_save_path = os.path.join(
         model_save_dir, experiment_name + "_last_model.pth"
     )
+
+    # load mean and std
+    statistics_path = os.path.expanduser(statistics_path)
+    statistics_tensor_shape = (1, 3, 1, 1)
+    mean = (
+        torch.load(os.path.join(statistics_path, "mean.pth"))
+        .view(statistics_tensor_shape)
+        .to(device)
+        .float()
+    )
+    std = (
+        torch.load(os.path.join(statistics_path, "std.pth"))
+        .view(statistics_tensor_shape)
+        .to(device)
+        .float()
+    )
+
     batch_counter = 0
     eval_loss = math.inf
     for epoch in range(nbr_epochs):
@@ -78,6 +96,9 @@ def train(
 
             # move tensors to the right device
             images, targets = images.to(device), targets.to(device)
+
+            # normalize images
+            images = (images - mean) / std
 
             # zero the gradient
             optimizer.zero_grad()

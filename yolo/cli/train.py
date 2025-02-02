@@ -100,6 +100,7 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
         nbr_epochs=config["train"]["nbr_epochs"],
         experiment_name=experiment_name,
         model_save_dir=config["directories"]["model_save_dir"],
+        statistics_path=config["directories"]["stats_dir"],
         writer=writer,
         device=device,
         perform_validation=config["train"]["perform_validation"],
