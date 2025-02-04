@@ -12,6 +12,7 @@ from yolo.data.utils import load_model
 from yolo.data.yolo_dataset import YoloDataset
 from yolo.loss.yolo_loss import YoloLoss
 from yolo.model.yolo import YoloModel
+from yolo.model.yolo_custom import CustomYoloModel
 from yolo.procedures.train import train
 from yolo.utils.config import load_config
 
@@ -40,22 +41,23 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     generate_train_val_partitions(
-        original_train_set_mapping_path=config["paths"]["original_train_set_mapping_path"],
+        original_train_set_mapping_path=config["paths"][
+            "original_train_set_mapping_path"
+        ],
         train_set_mapping_path=config["paths"]["train_set_mapping_path"],
         validation_set_mapping_path=config["paths"]["validation_set_mapping_path"],
-        validation_fraction=config["data"]["validation_fraction"]
+        validation_fraction=config["data"]["validation_fraction"],
     )
-    
+
     datasets_kwargs = {
         "train_set_mapping_path": config["paths"]["train_set_mapping_path"],
         "validation_set_mapping_path": config["paths"]["validation_set_mapping_path"],
         "test_set_mapping_path": config["paths"]["test_set_mapping_path"],
         "images_dir": config["directories"]["images_dir"],
-        "labels_dir": config["directories"]["labels_dir"]
+        "labels_dir": config["directories"]["labels_dir"],
     }
-    
-    train_dataset = YoloDataset(dataset_split=DatasetSplit.TRAIN,
-                                **datasets_kwargs)
+
+    train_dataset = YoloDataset(dataset_split=DatasetSplit.TRAIN, **datasets_kwargs)
     val_dataset = YoloDataset(dataset_split=DatasetSplit.VALIDATION, **datasets_kwargs)
 
     train_loader = DataLoader(
@@ -75,22 +77,29 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
             device=device,
         )
     else:
-        model = YoloModel().to(device)
+        #model = YoloModel().to(device)
+        model = CustomYoloModel().to(device)
 
     yolo_loss = YoloLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["lr"])
-    
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=config["train"]["lr"],
+        weight_decay=config["train"]["weight_decay"],
+    )
+
     experiment_name = datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S")
-    
+
     # create directory for tensorboard logging
-    tensorboar_logging_dir = os.path.join(os.path.expanduser(config["paths"]["tensorboard_log_path"]), experiment_name)
+    tensorboar_logging_dir = os.path.join(
+        os.path.expanduser(config["paths"]["tensorboard_log_path"]), experiment_name
+    )
     try:
         os.makedirs(tensorboar_logging_dir)
     except OSError as e:
         print(f"Error creating directory: {e}")
-        
+
     writer = SummaryWriter(tensorboar_logging_dir)
-    
+
     train(
         model=model,
         train_loader=train_loader,
