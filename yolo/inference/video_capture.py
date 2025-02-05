@@ -85,6 +85,8 @@ def launch_webcam_feed_inference(
     model: YoloModel,
     resize_factor: float = 2,
     classes_mapping: Optional[Dict] = None,
+    mean_tensor : Optional[torch.tensor] = None,
+    std_tensor : Optional[torch.tensor] = None,
 ) -> None:
     model.eval()
     cap = cv.VideoCapture(-1)
@@ -113,6 +115,8 @@ def launch_webcam_feed_inference(
     # initialize fps timer
     prev_frame_time = time.perf_counter()
     
+    normalize_images = (mean_tensor is not None) and (std_tensor is not None)
+    
     if not cap.isOpened():
         print("Cannot open camera")
         exit()
@@ -128,6 +132,14 @@ def launch_webcam_feed_inference(
         # use model to compute all the bounding boxes to plot
         img = torch.tensor(frame, dtype=torch.float32).permute(2, 0, 1)
         img = input_resize_transform(img).to("cuda")
+        
+        # resize if needed
+        if len(img.shape) == 3: img = img.unsqueeze(0)
+        
+        # normalize if needed
+        if normalize_images:
+            img = (img - mean_tensor) / std_tensor
+        
         pred = model(img)
         bbs_to_plot, predicted_classes = get_bbs_to_plot(
             prediction=pred,

@@ -14,6 +14,8 @@ def evaluate_model(
     batch_logger: logging.Logger,
     epoch_logger: logging.Logger,
     writer: torch.utils.tensorboard.writer.SummaryWriter,
+    mean : torch.tensor,
+    std : torch.tensor,
 ) -> float:
 
     batch_losses = []
@@ -28,6 +30,7 @@ def evaluate_model(
 
         # move tensors to the right device
         images, targets = images.to(device), targets.to(device)
+        images = (images - mean) / std
 
         # forward pass
         predictions = model(images)
