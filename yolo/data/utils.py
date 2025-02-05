@@ -8,6 +8,7 @@ import os
 from yolo.loss.utils import un_normalize_bounding_box
 from yolo.loss.iou import IoU
 from yolo.model.yolo import YoloModel
+from yolo.model.yolo_custom import CustomYoloModel
 
 
 def get_yolo_bounding_box_corner_coordinates(
@@ -81,10 +82,14 @@ def plot_model_prediction(img : torch.tensor,
     plt.show()
     
 def load_model(weights_path : str, device='cuda') -> YoloModel:
-    model = YoloModel()
     expanded_path = os.path.expanduser(weights_path)
     model_weights = torch.load(expanded_path, weights_only=True)
-    model.load_state_dict(model_weights)
+    try:
+        model = YoloModel()
+        model.load_state_dict(model_weights)
+    except RuntimeError as e:
+        model = CustomYoloModel()
+        model.load_state_dict(model_weights)
     model.to(device)
     return model
 

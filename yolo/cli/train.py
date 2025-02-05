@@ -34,6 +34,14 @@ def add_train_cmd(subparsers: argparse._SubParsersAction) -> None:
         type=str,
         help="The path to the config file.",
     )
+    train_parser.add_argument(
+        "-cm",
+        "--custom_model",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Whether to use the classical YOLO model or the custom version.",
+    )
 
 
 def launch_train_procedure(args: argparse.Namespace) -> None:
@@ -77,8 +85,12 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
             device=device,
         )
     else:
-        #model = YoloModel().to(device)
-        model = CustomYoloModel().to(device)
+        if args.custom_model:
+            model = CustomYoloModel(
+                dropout_probability=config["train"]["dropout_probability"]
+            ).to(device)
+        else:
+            model = YoloModel().to(device)
 
     yolo_loss = YoloLoss()
     optimizer = torch.optim.Adam(
