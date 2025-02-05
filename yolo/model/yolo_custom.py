@@ -26,15 +26,15 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_1 = torch.nn.BatchNorm2d(num_features=64)
-        self.activation_1 = torch.nn.LeakyReLU()
+        self.activation_1 = torch.nn.LeakyReLU(negative_slope=0.1)
         self.max_pool_1 = torch.nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.dropout_1 = torch.nn.Dropout2d(p=self.dropout_probability)
+        #self.dropout_1 = torch.nn.Dropout2d(p=self.dropout_probability)
         return torch.nn.Sequential(
             self.conv_1,
             self.batch_norm_1,
             self.activation_1,
             self.max_pool_1,
-            self.dropout_1,
+            #self.dropout_1,
         )
 
     def get_block_2(self) -> torch.nn.Sequential:
@@ -47,15 +47,15 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_2 = torch.nn.BatchNorm2d(num_features=192)
-        self.activation_2 = torch.nn.LeakyReLU()
+        self.activation_2 = torch.nn.LeakyReLU(negative_slope=0.1)
         self.max_pool_2 = torch.nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.dropout_2 = torch.nn.Dropout2d(p=self.dropout_probability)
+        #self.dropout_2 = torch.nn.Dropout2d(p=self.dropout_probability)
         return torch.nn.Sequential(
             self.conv_2,
             self.batch_norm_2,
             self.activation_2,
             self.max_pool_2,
-            self.dropout_2,
+            #self.dropout_2,
         )
 
     def get_block_3(self) -> torch.nn.Sequential:
@@ -68,7 +68,7 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_3 = torch.nn.BatchNorm2d(num_features=128)
-        self.activation_3 = torch.nn.LeakyReLU()
+        self.activation_3 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.conv_4 = torch.nn.Conv2d(
             in_channels=128,
@@ -79,7 +79,7 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_4 = torch.nn.BatchNorm2d(num_features=256)
-        self.activation_4 = torch.nn.LeakyReLU()
+        self.activation_4 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.conv_5 = torch.nn.Conv2d(
             in_channels=256,
@@ -90,7 +90,7 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_5 = torch.nn.BatchNorm2d(num_features=256)
-        self.activation_5 = torch.nn.LeakyReLU()
+        self.activation_5 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.conv_6 = torch.nn.Conv2d(
             in_channels=256,
@@ -101,10 +101,10 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_6 = torch.nn.BatchNorm2d(num_features=512)
-        self.activation_6 = torch.nn.LeakyReLU()
+        self.activation_6 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.max_pool_3 = torch.nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.dropout_3 = torch.nn.Dropout2d(p=self.dropout_probability)
+        #self.dropout_3 = torch.nn.Dropout2d(p=self.dropout_probability)
 
         return torch.nn.Sequential(
             self.conv_3,
@@ -120,7 +120,7 @@ class CustomYoloModel(torch.nn.Module):
             self.batch_norm_6,
             self.activation_6,
             self.max_pool_3,
-            self.dropout_3,
+            #self.dropout_3,
         )
 
     def get_block_4(self) -> torch.nn.Sequential:
@@ -137,7 +137,7 @@ class CustomYoloModel(torch.nn.Module):
                 )
             )
             self.sub_block.append(torch.nn.BatchNorm2d(num_features=256))
-            self.sub_block.append(torch.nn.LeakyReLU())
+            self.sub_block.append(torch.nn.LeakyReLU(negative_slope=0.1))
             self.sub_block.append(
                 torch.nn.Conv2d(
                     in_channels=256,
@@ -149,7 +149,7 @@ class CustomYoloModel(torch.nn.Module):
                 )
             )
             self.sub_block.append(torch.nn.BatchNorm2d(num_features=512))
-            self.sub_block.append(torch.nn.LeakyReLU())
+            self.sub_block.append(torch.nn.LeakyReLU(negative_slope=0.1))
 
         self.conv_15 = torch.nn.Conv2d(
             in_channels=512,
@@ -160,7 +160,7 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_15 = torch.nn.BatchNorm2d(num_features=512)
-        self.activation_15 = torch.nn.LeakyReLU()
+        self.activation_15 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.conv_16 = torch.nn.Conv2d(
             in_channels=512,
@@ -171,10 +171,10 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_16 = torch.nn.BatchNorm2d(num_features=1024)
-        self.activation_16 = torch.nn.LeakyReLU()
+        self.activation_16 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.max_pool_4 = torch.nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.dropout_4 = torch.nn.Dropout2d(p=self.dropout_probability)
+        #self.dropout_4 = torch.nn.Dropout2d(p=self.dropout_probability)
         return torch.nn.Sequential(
             *self.sub_block,
             self.conv_15,
@@ -184,7 +184,7 @@ class CustomYoloModel(torch.nn.Module):
             self.batch_norm_16,
             self.activation_16,
             self.max_pool_4,
-            self.dropout_4,
+            #self.dropout_4,
         )
 
     def get_block_5(self) -> torch.nn.Sequential:
@@ -201,7 +201,7 @@ class CustomYoloModel(torch.nn.Module):
                 )
             )
             self.sub_block_2.append(torch.nn.BatchNorm2d(num_features=512))
-            self.sub_block_2.append(torch.nn.LeakyReLU())
+            self.sub_block_2.append(torch.nn.LeakyReLU(negative_slope=0.1))
             self.sub_block_2.append(
                 torch.nn.Conv2d(
                     in_channels=512,
@@ -213,7 +213,7 @@ class CustomYoloModel(torch.nn.Module):
                 )
             )
             self.sub_block_2.append(torch.nn.BatchNorm2d(num_features=1024))
-            self.sub_block_2.append(torch.nn.LeakyReLU())
+            self.sub_block_2.append(torch.nn.LeakyReLU(negative_slope=0.1))
 
         self.conv_21 = torch.nn.Conv2d(
             in_channels=1024,
@@ -224,7 +224,7 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_21 = torch.nn.BatchNorm2d(num_features=1024)
-        self.activation_21 = torch.nn.LeakyReLU()
+        self.activation_21 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.conv_22 = torch.nn.Conv2d(
             in_channels=1024,
@@ -235,8 +235,8 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_22 = torch.nn.BatchNorm2d(num_features=1024)
-        self.activation_22 = torch.nn.LeakyReLU()
-        self.dropout_5 = torch.nn.Dropout2d(p=self.dropout_probability)
+        self.activation_22 = torch.nn.LeakyReLU(negative_slope=0.1)
+        #self.dropout_5 = torch.nn.Dropout2d(p=self.dropout_probability)
 
         return torch.nn.Sequential(
             *self.sub_block_2,
@@ -246,7 +246,7 @@ class CustomYoloModel(torch.nn.Module):
             self.conv_22,
             self.batch_norm_22,
             self.activation_22,
-            self.dropout_5,
+            #self.dropout_5,
         )
 
     def get_block_6(self) -> torch.nn.Sequential:
@@ -259,7 +259,7 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_23 = torch.nn.BatchNorm2d(num_features=1024)
-        self.activation_23 = torch.nn.LeakyReLU()
+        self.activation_23 = torch.nn.LeakyReLU(negative_slope=0.1)
 
         self.conv_24 = torch.nn.Conv2d(
             in_channels=1024,
@@ -270,9 +270,9 @@ class CustomYoloModel(torch.nn.Module):
             dilation=(1, 1),
         )
         self.batch_norm_24 = torch.nn.BatchNorm2d(num_features=1024)
-        self.activation_24 = torch.nn.LeakyReLU()
+        self.activation_24 = torch.nn.LeakyReLU(negative_slope=0.1)
         
-        self.dropout_6 = torch.nn.Dropout2d(p=self.dropout_probability)
+        #self.dropout_6 = torch.nn.Dropout2d(p=self.dropout_probability)
 
         return torch.nn.Sequential(
             self.conv_23,
@@ -281,15 +281,15 @@ class CustomYoloModel(torch.nn.Module):
             self.conv_24,
             self.batch_norm_24,
             self.activation_24,
-            self.dropout_6
+            #self.dropout_6
         )
 
     def get_linear_block_1(self) -> torch.nn.Linear:
         self.linear_1 = torch.nn.Linear(50_176, 4_096)
-        self.batch_norm_24 = torch.nn.BatchNorm1d(num_features=4_096)
-        self.activation_25 = torch.nn.LeakyReLU()
+        self.batch_norm_25 = torch.nn.BatchNorm1d(num_features=4_096)
+        self.activation_25 = torch.nn.LeakyReLU(negative_slope=0.1)
         self.dropout_7 = torch.nn.Dropout(p=self.dropout_probability)
-        return torch.nn.Sequential(self.linear_1, self.batch_norm_24, self.activation_25, self.dropout_7)
+        return torch.nn.Sequential(self.linear_1, self.batch_norm_25, self.activation_25, self.dropout_7)
 
     def get_linear_block_2(self) -> torch.nn.Linear:
         self.linear_2 = torch.nn.Linear(4_096, 7 * 7 * 30)
