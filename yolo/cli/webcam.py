@@ -52,12 +52,21 @@ def add_webcam_inference_cmd(subparsers: argparse._SubParsersAction) -> None:
         default=DEFAULT_STATISTICS_DIR,
         help="The directory in which the mean and std tensors are contained. Only when using CustomYolo."
     )
+    webcam_inference_parser.add_argument(
+        "-ni",
+        "--normalize_images",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Whether to normalize the webcam images before inputing them into the model or not."
+    )
 
 
 def launch_webcam_inference(args: argparse.Namespace) -> None:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = load_model(args.model_path).to(device).eval()
-    if isinstance(model, CustomYoloModel):
+    mean = std = None
+    if args.normalize_images:
         statistics_path = os.path.expanduser(args.statistics_dir)
         statistics_tensor_shape = (1, 3, 1, 1)
         mean = (

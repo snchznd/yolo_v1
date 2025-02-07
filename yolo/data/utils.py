@@ -81,15 +81,18 @@ def plot_model_prediction(img : torch.tensor,
         ax.add_patch(rect)
     plt.show()
     
-def load_model(weights_path : str, device='cuda') -> YoloModel:
+def load_model(weights_path : str, custom_model : bool, device : str ='cuda') -> YoloModel:
     expanded_path = os.path.expanduser(weights_path)
     model_weights = torch.load(expanded_path, weights_only=True)
-    try:
-        model = YoloModel()
-        model.load_state_dict(model_weights)
-    except RuntimeError as e:
+    if custom_model:
+        print(f'loading custom yolo model at path: {expanded_path}')
         model = CustomYoloModel()
         model.load_state_dict(model_weights)
+    else:
+        model = YoloModel()
+        model.load_state_dict(model_weights)
+        print(f'load default yolo model from path: {expanded_path}')
+    
     model.to(device)
     return model
 

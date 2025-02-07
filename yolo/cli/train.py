@@ -82,14 +82,18 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
     if args.load_best_model:
         model = load_model(
             weights_path=config["paths"]["initial_model_path"],
+            custom_model=args.custom_model,
             device=device,
         )
     else:
         if args.custom_model:
-            model = CustomYoloModel(
-                dropout_probability=config["train"]["dropout_probability"]
-            ).to(device)
+            # model = CustomYoloModel(
+            #     dropout_probability=config["train"]["dropout_probability"]
+            # ).to(device)
+            print('Creating new custom yolo model')
+            model = CustomYoloModel().to(device)
         else:
+            print('Creating new vanilla yolo model')
             model = YoloModel().to(device)
 
     yolo_loss = YoloLoss()
@@ -100,7 +104,7 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
     )
 
     experiment_name = datetime.datetime.now().strftime("%d-%m-%y_%H:%M:%S")
-
+    
     # create directory for tensorboard logging
     tensorboar_logging_dir = os.path.join(
         os.path.expanduser(config["paths"]["tensorboard_log_path"]), experiment_name
@@ -111,7 +115,13 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
         print(f"Error creating directory: {e}")
 
     writer = SummaryWriter(tensorboar_logging_dir)
-
+    statistics_path = None
+    if config["train"]["use_normalization"]:
+        print('using normalization')
+        statistics_path = config["directories"]["stats_dir"]
+    else:
+        print('not using any normalization')
+    
     train(
         model=model,
         train_loader=train_loader,
@@ -121,7 +131,7 @@ def launch_train_procedure(args: argparse.Namespace) -> None:
         nbr_epochs=config["train"]["nbr_epochs"],
         experiment_name=experiment_name,
         model_save_dir=config["directories"]["model_save_dir"],
-        statistics_path=config["directories"]["stats_dir"],
+        statistics_path=statistics_path,
         writer=writer,
         device=device,
         perform_validation=config["train"]["perform_validation"],

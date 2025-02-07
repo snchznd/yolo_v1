@@ -3,7 +3,7 @@ import logging
 import torch
 import torch.utils.tensorboard
 from tqdm import tqdm
-
+from typing import Optional
 
 def evaluate_model(
     model: torch.nn.Module,
@@ -14,8 +14,8 @@ def evaluate_model(
     batch_logger: logging.Logger,
     epoch_logger: logging.Logger,
     writer: torch.utils.tensorboard.writer.SummaryWriter,
-    mean : torch.tensor,
-    std : torch.tensor,
+    mean : Optional[torch.tensor],
+    std : Optional[torch.tensor],
 ) -> float:
 
     batch_losses = []
@@ -30,7 +30,8 @@ def evaluate_model(
 
         # move tensors to the right device
         images, targets = images.to(device), targets.to(device)
-        images = (images - mean) / std
+        if (mean is not None) and (std is not None):
+            images = (images - mean) / std
 
         # forward pass
         predictions = model(images)
